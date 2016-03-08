@@ -1,0 +1,68 @@
+#!/bin/bash
+
+EXIT_CODE=0
+TESTNET=$HOME/.testnet
+GENESIS=$TESTNET/genesis.json
+GETH_PID_FILE=$TESTNET/geth.pid
+PASSFILE=$TESTNET/passfile
+LOGS=$TESTNET/logs
+ADDR=$TESTNET/address
+
+setup(){
+    mkdir $TESTNET
+    mkdir $LOGS
+    hex -r32 > $PASSFILE
+    cat > $GENESIS <<EOF
+{
+  "alloc":{},
+  "mixhash":"0x0000000000000000000000000000000000000000000000000000000000000000",
+  "extraData":"0x`hex -r32`",
+  "difficulty":"0x1",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "nonce": "0x`hex -r8`",
+  "gasLimit": "0x2fefd8",
+  "timestamp": "0x00"
+}
+EOF
+    geth --datadir $TESTNET --password $PASSFILE account new >addr.temp
+    grep -E -o --color=never "[0-9]{40}" addr.temp >$ADDR
+    rm addr.temp
+}
+
+if [ ! -d $TESTNET ]
+    setup
+fi
+
+case $1 in
+    --reset|-r)
+	rm -rf $TESTNET
+	setup
+	;;
+    --kill|-k)
+	if [ -a $GETH_PID_FILE ]; then #if 
+	    echo 'Shutting down geth.'
+	    read GETH_PID <$GETH_PID_FILE #read pid from file 
+	    kill -s SIGINT $GETH_PID # kill using SIGINT
+	    rm -f $GETH_PID_FILE # delete pid file
+	else
+	    echo 'No geth node running to shut down!'
+	    EXIT_CODE=1
+	fi
+	;;
+    '')
+	echo 'Starting geth testnet.'
+	LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
+	nohup geth --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSFILE --mine --minerthreads 1 --genesis $GENESIS </dev/null >$LOG_FILE &
+	echo $! > $GETH_PID_FILE # write pid of last background job
+	;;                       # to pid file
+    -c|--console)
+	geth attach
+	;;
+    *)
+	echo 'Unknown command: '"$1"
+	EXIT_CODE=1
+	;;
+esac
+exit $EXIT_CODE
+
