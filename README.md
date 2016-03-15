@@ -1,2 +1,2 @@
 # scripts
-A collection of scripts I use/am contantly working on.
+A collection of scripts I use/am constantly working on.
