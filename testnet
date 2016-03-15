@@ -8,6 +8,14 @@ PASSFILE=$TESTNET/passfile
 LOGS=$TESTNET/logs
 ADDR=$TESTNET/address
 
+get_pid(){
+    read GETH_PID <$GETH_PID_FILE
+}
+
+start_geth(){
+    nohup geth --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSFILE --mine --minerthreads 1 --genesis $GENESIS </dev/null &>$LOG_FILE &
+}
+
 setup(){
     mkdir $TESTNET
     mkdir $LOGS
@@ -30,19 +38,21 @@ EOF
     rm addr.temp
 }
 
-if [ ! -d $TESTNET ]
+if [ ! -d $TESTNET ]; then
+    echo 'Running first-time setup...'
     setup
 fi
 
 case $1 in
     --reset|-r)
+	echo 'Resetting...'
 	rm -rf $TESTNET
 	setup
 	;;
     --kill|-k)
 	if [ -a $GETH_PID_FILE ]; then #if 
 	    echo 'Shutting down geth.'
-	    read GETH_PID <$GETH_PID_FILE #read pid from file 
+	    get_pid
 	    kill -s SIGINT $GETH_PID # kill using SIGINT
 	    rm -f $GETH_PID_FILE # delete pid file
 	else
@@ -51,13 +61,19 @@ case $1 in
 	fi
 	;;
     '')
-	echo 'Starting geth testnet.'
-	LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
-	nohup geth --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSFILE --mine --minerthreads 1 --genesis $GENESIS </dev/null >$LOG_FILE &
-	echo $! > $GETH_PID_FILE # write pid of last background job
-	;;                       # to pid file
+	if [ -a $GETH_PID_FILE ]; then
+	    get_pid
+	    echo "There's already a geth process running with pid $GETH_PID"
+	    EXIT_CODE = 1
+	else
+	    echo 'Starting geth testnet.'
+	    LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
+	    start_geth
+	    echo $! > $GETH_PID_FILE
+	fi
+	;;
     -c|--console)
-	geth attach
+	geth --datadir $TESTNET attach
 	;;
     *)
 	echo 'Unknown command: '"$1"
@@ -65,4 +81,3 @@ case $1 in
 	;;
 esac
 exit $EXIT_CODE
-
