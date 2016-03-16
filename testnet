@@ -7,6 +7,7 @@ GETH_PID_FILE=$TESTNET/geth.pid
 PASSFILE=$TESTNET/passfile
 LOGS=$TESTNET/logs
 ADDR=$TESTNET/address
+ADDR_TEMP=$TESTNET/addr.temp
 
 get_pid(){
     read GETH_PID <$GETH_PID_FILE
@@ -33,9 +34,9 @@ setup(){
   "timestamp": "0x00"
 }
 EOF
-    geth --datadir $TESTNET --password $PASSFILE account new >addr.temp
-    grep -E -o --color=never "[0-9]{40}" addr.temp >$ADDR
-    rm addr.temp
+    geth --datadir $TESTNET --password $PASSFILE account new &>$ADDR_TEMP
+    grep -E -o --color=never "[0-9a-f]{40}" $ADDR_TEMP >$ADDR
+    rm $ADDR_TEMP
 }
 
 if [ ! -d $TESTNET ]; then
@@ -44,6 +45,37 @@ if [ ! -d $TESTNET ]; then
 fi
 
 case $1 in
+    --help|-h)
+	echo "Usage:
+    testnet [option]
+
+Summary:
+    Use geth to test your contract code with testnet! testnet handles
+  mundane details like setting up an address with a random password, genesis
+  block creation, and more. Use testnet to start your private network from
+  scratch with a single command, and to connect to the a console to interact
+  with your node.
+
+    testnet stores all it's miscellaneous files in this directory:
+
+    $TESTNET
+
+    The ipc connection for the testnet node is located here:
+
+    $TESTNET/geth.ipc
+
+    testnet only can only handle one option at a time right now.
+
+Options:
+    --reset, -r              Deletes EVERYTHING in your testnet directory and
+                             runs the setup again.
+    --kill, -k               Kills the current node.
+    --console, -c            Connects to the console.
+    --address, -a            Prints the current coinbase address and exits.
+    --help, -h               Shows this help.
+
+    Using testnet without an option simply starts the testnet."
+	;;
     --reset|-r)
 	echo 'Resetting...'
 	rm -rf $TESTNET
@@ -64,7 +96,7 @@ case $1 in
 	if [ -a $GETH_PID_FILE ]; then
 	    get_pid
 	    echo "There's already a geth process running with pid $GETH_PID"
-	    EXIT_CODE = 1
+	    EXIT_CODE=1
 	else
 	    echo 'Starting geth testnet.'
 	    LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
@@ -74,6 +106,9 @@ case $1 in
 	;;
     -c|--console)
 	geth --datadir $TESTNET attach
+	;;
+    -a|--address)
+	cat $ADDR
 	;;
     *)
 	echo 'Unknown command: '"$1"
