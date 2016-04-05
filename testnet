@@ -1,52 +1,14 @@
 #!/bin/bash
 
-EXIT_CODE=0
 TESTNET=$HOME/.testnet
 GENESIS=$TESTNET/genesis.json
 GETH_PID_FILE=$TESTNET/geth.pid
-PASSFILE=$TESTNET/passfile
+PASSWORD=$TESTNET/password.txt
 LOGS=$TESTNET/logs
-ADDR=$TESTNET/address
-ADDR_TEMP=$TESTNET/addr.temp
+ADDRESS=$TESTNET/address.txt
 
-get_pid(){
-    read GETH_PID <$GETH_PID_FILE
-}
-
-start_geth(){
-    nohup geth --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSFILE --mine --minerthreads 1 --genesis $GENESIS </dev/null &>$LOG_FILE &
-}
-
-setup(){
-    mkdir $TESTNET
-    mkdir $LOGS
-    hex -r32 > $PASSFILE
-    cat > $GENESIS <<EOF
-{
-  "alloc":{},
-  "mixhash":"0x0000000000000000000000000000000000000000000000000000000000000000",
-  "extraData":"0x`hex -r32`",
-  "difficulty":"0x1",
-  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "coinbase": "0x0000000000000000000000000000000000000000",
-  "nonce": "0x`hex -r8`",
-  "gasLimit": "0x2fefd8",
-  "timestamp": "0x00"
-}
-EOF
-    geth --datadir $TESTNET --password $PASSFILE account new &>$ADDR_TEMP
-    grep -E -o --color=never "[0-9a-f]{40}" $ADDR_TEMP >$ADDR
-    rm $ADDR_TEMP
-}
-
-if [ ! -d $TESTNET ]; then
-    echo 'Running first-time setup...'
-    setup
-fi
-
-case $1 in
-    --help|-h)
-	echo "Usage:
+show_help(){
+    echo "Usage:
     testnet [option]
 
 Summary:
@@ -75,44 +37,89 @@ Options:
     --help, -h               Shows this help.
 
     Using testnet without an option simply starts the testnet."
+}
+
+get_pid(){
+    read GETH_PID < $GETH_PID_FILE
+}
+
+kill_geth(){
+    if [ -z $1 ]; then echo 'Shutting down testnet.'; fi
+    get_pid
+    kill -s SIGINT $GETH_PID &> /dev/null
+    rm $GETH_PID_FILE &> /dev/null
+}
+
+start_geth(){
+    if [ -f $GETH_PID_FILE ]; then
+	get_pid
+	if kill -0 $GETH_PID &> /dev/null; then
+	    echo 'testnet already running! Try testnet -c.'
+	    return 1
+	fi
+	kill_geth 1
+    fi
+    echo 'Starting testnet.'
+    LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
+    nohup geth --rpc --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSWORD --mine --minerthreads 1 --genesis $GENESIS </dev/null &>$LOG_FILE &
+    echo $! > $GETH_PID_FILE
+    return 0
+}
+
+setup(){
+    echo 'Running setup.'
+    mkdir $TESTNET
+    mkdir $LOGS
+    hex -r32 > $PASSWORD
+    cat > $GENESIS <<EOF
+{
+  "alloc":{},
+  "mixhash":"0x0000000000000000000000000000000000000000000000000000000000000000",
+  "extraData":"0x`hex -r32`",
+  "difficulty":"0x1",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "nonce": "0x`hex -r8`",
+  "gasLimit": "0x2fefd8",
+  "timestamp": "0x00"
+}
+EOF
+    geth --datadir $TESTNET --password $PASSWORD account new | egrep -o --color=never '[0-9a-f]{40}' > $ADDRESS
+}
+
+reset(){
+    echo 'Reseting testnet data.'
+    if [ -f $GETH_PID_FILE ]; then kill_geth; fi
+    rm -rf $TESTNET
+    setup
+}
+
+if [ ! -d $TESTNET ]; then
+    setup
+fi
+
+case $1 in
+    --help|-h)
+	show_help
 	;;
     --reset|-r)
-	echo 'Resetting...'
-	rm -rf $TESTNET
-	setup
+	reset
 	;;
     --kill|-k)
-	if [ -a $GETH_PID_FILE ]; then #if 
-	    echo 'Shutting down geth.'
-	    get_pid
-	    kill -s SIGINT $GETH_PID # kill using SIGINT
-	    rm -f $GETH_PID_FILE # delete pid file
-	else
-	    echo 'No geth node running to shut down!'
-	    EXIT_CODE=1
-	fi
+	kill_geth
 	;;
     '')
-	if [ -a $GETH_PID_FILE ]; then
-	    get_pid
-	    echo "There's already a geth process running with pid $GETH_PID"
-	    EXIT_CODE=1
-	else
-	    echo 'Starting geth testnet.'
-	    LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
-	    start_geth
-	    echo $! > $GETH_PID_FILE
-	fi
+	if ! start_geth; then exit 1; fi
 	;;
     -c|--console)
 	geth --datadir $TESTNET attach
 	;;
     -a|--address)
-	cat $ADDR
+	cat $ADDRESS
 	;;
     *)
 	echo 'Unknown command: '"$1"
-	EXIT_CODE=1
+	exit 1
 	;;
 esac
-exit $EXIT_CODE
+exit 0
