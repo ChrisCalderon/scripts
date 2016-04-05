@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- mode: python -*-
+'''An XKCD inspired password generator for *nix.'''
 from random import SystemRandom
 import sys
 import pprint
