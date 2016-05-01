@@ -1,47 +1,41 @@
-#!/usr/bin/python3
-# -*- mode: python -*-
-from random import SystemRandom
-import sys
-import pprint
+#!/bin/bash
 
-def parse_args():
-    defaults = {'--words-per-password'  : 6,
-                '--number-of-passwords' : 1}
-    result = defaults.copy()
-    argv = sys.argv[1:]
-    i = 0
-    while i < len(argv):
-        arg = argv[i]
-        if arg in defaults:
-            default_value = defaults[arg]
-            if default_value is not None:
-                val_type = type(default_value)
-                try:
-                    val = val_type(argv[i + 1])
-                except:
-                    print('Bad value for option ' + arg)
-                    sys.exit(1)
-                result[arg] = val
-                i += 2
-        elif arg in ('-h', '--help'):
-            print('Options (and their default values):')
-            pprint.pprint(defaults)
-            sys.exit(1)
-        else:
-            print('Bad arg: ' + arg)
-            sys.exit(1)
-    return result
 
-def main():
-    options = parse_args()
-    
-    n = options['--words-per-password']
-    r = SystemRandom()
-    words = open('/usr/share/dict/american-english').read().split('\n')
-    r.shuffle(words)
-    for i in range(options['--number-of-passwords']):
-        print(' '.join(words[n*i:n*i+n]))
-    sys.exit(0)
+OPTS=`getopt -o w:p: -l words:,passwords: -- "$@"`
 
-if __name__ == '__main__':
-    main()
+if [ $? != 0 ] ; then
+    echo "Failed parsing options." >&2
+    exit 1
+fi
+
+eval set -- "$OPTS"
+
+WORDS=6
+PASSWORDS=1
+
+while true
+do
+    case $1 in 
+	-w|--words)
+	    WORDS="$2"
+	    shift 2
+	    ;;
+	-p|--passwords)
+	    PASSWORDS="$2"
+	    shift 2
+	    ;;
+	--)
+	    shift
+	    break
+	    ;;
+	*)
+	    break
+	    ;;
+    esac
+done
+
+while [ $PASSWORDS -gt 0 ]
+do
+    shuf --random-source=/dev/urandom -n "$WORDS" /usr/share/dict/american-english | paste -s -d " "
+    PASSWORDS=$(( $PASSWORDS - 1 ))
+done

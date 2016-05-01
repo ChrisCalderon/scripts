@@ -1,0 +1,4 @@
+#!/bin/bash
+COWPATH=/usr/share/cowsay/cows
+COWFILE=$(ls -1 $COWPATH | shuf -n 1)
+fortune -o | cowsay -f $COWFILE 

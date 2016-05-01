@@ -67,10 +67,10 @@ def main():
     try:
         options, extra_args = getopt.getopt(sys.argv[1:],
                                             'nr:f:h',
-                                            ['--no-newline',
-                                             '--file=',
-                                             '--help',
-                                             '--random-bytes='])
+                                            ['no-newline',
+                                             'file=',
+                                             'help',
+                                             'random-bytes='])
     except getopt.GetoptError as err:
         print(err)
         print(__doc__)
