@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 OPTS=`getopt -o w:p: -l words:,passwords: -- "$@"`
 
 if [ $? != 0 ] ; then
