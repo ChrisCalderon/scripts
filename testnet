@@ -66,20 +66,24 @@ start_geth(){
     return 0
 }
 
+randomhex(){
+    od -A n -N $1 -x /dev/urandom | tr -d  '\n '
+}
+
 setup(){
     echo 'Running setup.'
     mkdir $TESTNET
     mkdir $LOGS
-    hex -r32 > $PASSWORD
+    echo `randomhex 32` > $PASSWORD
     cat > $GENESIS <<EOF
 {
   "alloc":{},
   "mixhash":"0x0000000000000000000000000000000000000000000000000000000000000000",
-  "extraData":"0x`hex -r32`",
+  "extraData":"0x`randomhex 32`",
   "difficulty":"0x1",
   "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
-  "nonce": "0x`hex -r8`",
+  "nonce": "0x`randomhex 8`",
   "gasLimit": "0x2fefd8",
   "timestamp": "0x00"
 }
