@@ -6,6 +6,7 @@ GETH_PID_FILE=$TESTNET/geth.pid
 PASSWORD=$TESTNET/password.txt
 LOGS=$TESTNET/logs
 ADDRESS=$TESTNET/address.txt
+IPC=$TESTNET/geth.ipc
 
 show_help(){
     echo "Usage:
@@ -61,7 +62,7 @@ start_geth(){
     fi
     echo 'Starting testnet.'
     LOG_FILE="$LOGS/geth:$(date +%F:%T).log"
-    nohup geth --rpc --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSWORD --mine --minerthreads 1 --genesis $GENESIS </dev/null &>$LOG_FILE &
+    nohup geth --ipcpath $IPC --rpc --rpcport 8546 --networkid 9001 --blockchainversion 9001 --nodiscover --unlock 0 --datadir $TESTNET --password $PASSWORD --mine --minerthreads 1 --genesis $GENESIS </dev/null &>$LOG_FILE &
     echo $! > $GETH_PID_FILE
     return 0
 }
