@@ -9,6 +9,11 @@ fi
 
 eval set -- "$OPTS"
 
+DICT=/usr/share/dict/american-english
+if [ ! -f $DICT ]
+then
+    DICT=/usr/share/dict/words
+fi
 WORDS=6
 PASSWORDS=1
 
@@ -35,6 +40,6 @@ done
 
 while [ $PASSWORDS -gt 0 ]
 do
-    shuf --random-source=/dev/urandom -n "$WORDS" /usr/share/dict/american-english | paste -s -d " "
+    shuf --random-source=/dev/urandom -n $WORDS $DICT | paste -s -d " "
     PASSWORDS=$(( $PASSWORDS - 1 ))
 done
