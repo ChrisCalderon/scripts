@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+PID_FILE=$HOME/.parity/my_parity.pid
+
+read PID < $PID_FILE
+if kill -0 $PID &>/dev/null
+then
+    echo Shutting down parity.
+    kill -s SIGINT $PID
+    rm $PID_FILE
+else
+    echo parity not running.
+fi

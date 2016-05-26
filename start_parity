@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+RPCPORT=9545
+PASSWORD=$HOME/passwords/parity.pass
+PID_FILE=$HOME/.parity/my_parity.pid
+LOG=$HOME/.parity/my_parity_logs.log
+
+if [ -f $PID_FILE ]
+then
+    read PID < $PID_FILE
+    if kill -0 $PID &>/dev/null
+    then
+	echo parity already running.
+	exit 2
+    fi
+fi
+
+echo Starting parity.
+nohup parity --jsonrpc-port $RPCPORT --password $PASSWORD --unlock 0 </dev/null &>>$LOG &
+echo $! > $PID_FILE

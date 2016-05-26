@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+PID_FILE=$HOME/.ethereum/geth.pid
+PASSWORD=$HOME/passwords/geth.pass
+LOG=$HOME/.ethereum/geth_out.log
+
+if [ -f $PID_FILE ]
+then
+    read PID < $PID_FILE
+    if kill -0 $PID &>/dev/null
+    then
+	echo geth already running.
+	exit 2
+    fi
+fi
+
+echo Starting geth.
+nohup geth --metrics --rpc --rpcapi admin,eth,debug,miner,net,shh,txpool,personal,web3 --password $PASSWORD --unlock 0 </dev/null &>>$LOG &
+echo $! > $PID_FILE
