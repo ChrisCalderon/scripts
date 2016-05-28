@@ -4,7 +4,7 @@ RPCPORT=9545
 PASSWORD=$HOME/passwords/parity.pass
 PID_FILE=$HOME/.parity/my_parity.pid
 LOG="$HOME/.parity/my_parity:$(date +%F:%T).log"
-ADDR=436e2e46aecd9e63a88ebdab05a7bf7841be4ed2
+ADDR=9cd51a828ef15378985ef52e1bf48b514eb2aa5e
 
 if [ -f $PID_FILE ]
 then
