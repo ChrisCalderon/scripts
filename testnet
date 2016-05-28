@@ -117,7 +117,7 @@ case $1 in
 	if ! start_geth; then exit 1; fi
 	;;
     -c|--console)
-	geth --datadir $TESTNET attach
+	geth --datadir $TESTNET attach ipc:$IPC
 	;;
     -a|--address)
 	cat $ADDRESS

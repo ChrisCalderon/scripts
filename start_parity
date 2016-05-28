@@ -3,7 +3,8 @@
 RPCPORT=9545
 PASSWORD=$HOME/passwords/parity.pass
 PID_FILE=$HOME/.parity/my_parity.pid
-LOG=$HOME/.parity/my_parity_logs.log
+LOG="$HOME/.parity/my_parity:$(date +%F:%T).log"
+ADDR=436e2e46aecd9e63a88ebdab05a7bf7841be4ed2
 
 if [ -f $PID_FILE ]
 then
@@ -16,5 +17,5 @@ then
 fi
 
 echo Starting parity.
-nohup parity --jsonrpc-port $RPCPORT --password $PASSWORD --unlock 0 </dev/null &>>$LOG &
+nohup parity --jsonrpc-port $RPCPORT --password $PASSWORD --unlock $ADDR </dev/null &>>$LOG &
 echo $! > $PID_FILE

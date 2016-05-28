@@ -2,7 +2,7 @@
 
 PID_FILE=$HOME/.ethereum/geth.pid
 PASSWORD=$HOME/passwords/geth.pass
-LOG=$HOME/.ethereum/geth_out.log
+LOG="$HOME/.ethereum/my_geth:$(date +%F:%T).log"
 
 if [ -f $PID_FILE ]
 then
